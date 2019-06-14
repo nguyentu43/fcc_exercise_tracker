@@ -37,7 +37,7 @@ const exerciseSchema = mongoose.Schema({
   },
   date: {
     type: Date,
-    default: new Date()
+    default: moment().format('YYYY-MM-DD')
   },
   _id: {
     'type': String,
@@ -78,8 +78,15 @@ app.get('/api/exercise/log', function(req, res, next){
     result.to = moment(to).format("ddd MMM DD YYYY");
   }
   if(limit) query.limit(limit);
+  
   query.exec(function(err, data){
     if(err) return next(err);
+    data = data.map(function(item) { 
+      let tmp = item.toObject();
+      tmp.date = moment(tmp.date).format("ddd MMM DD YYYY");
+      return tmp;
+    });
+    
     result = {
       ...req.user,
       count: data.length,
@@ -100,10 +107,13 @@ app.post('/api/exercise/new-user', function(req, res, next){
   });
 });
 app.post('/api/exercise/add', function(req, res, next){
+  if(!req.body.date)
+    delete req.body.date;
   const exercise = new Exercise({ ...req.body });
   exercise.save(function(err, exercise){
     if(err) return next(err);
-    exercise = exercise.toArray();
+    exercise = exercise.toObject();
+    exercise.date = moment(exercise.date).format("ddd MMM DD YYYY");
     res.json(exercise);
   });
 });
