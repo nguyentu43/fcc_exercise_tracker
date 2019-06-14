@@ -18,7 +18,10 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
-app.route('/api/exercise', require('./api.js'));
+require('./user');
+require('./exercise');
+
+app.use('/api/exercise', require('./api'));
 
 // Not found middleware
 app.use((req, res, next) => {
