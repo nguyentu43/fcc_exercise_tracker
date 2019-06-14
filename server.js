@@ -4,6 +4,7 @@ const bodyParser = require('body-parser')
 
 const cors = require('cors')
 
+const moment = require('moment');
 const shortid = require('shortid')
 const mongoose = require('mongoose')
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/exercise-track' )
@@ -17,7 +18,7 @@ const userSchema = mongoose.Schema({
       type: String,
       default: shortid.generate
     }
-  });
+  }, { versionKey: false });
 const User = mongoose.model('User', userSchema);
 
 const exerciseSchema = mongoose.Schema({
@@ -36,13 +37,13 @@ const exerciseSchema = mongoose.Schema({
   },
   date: {
     type: Date,
-    default: new Date
+    default: new Date()
   },
   _id: {
     'type': String,
     'default': shortid.generate
   }
-});
+}, { versionKey: false });
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
 app.use(cors())
@@ -70,13 +71,12 @@ app.get('/api/exercise/log', function(req, res, next){
   const result = {};
   if(from) {
     query.where({ date: { $gte: from } });
-    result.from = from;
+    result.from = moment(from).format("ddd MMM DD YYYY");
   }
   if(to) {
     query.where({ date: { $lte: to } });
-    result.to = to;
+    result.to = moment(to).format("ddd MMM DD YYYY");
   }
-  
   if(limit) query.limit(limit);
   query.exec(function(err, data){
     if(err) return next(err);
@@ -103,6 +103,7 @@ app.post('/api/exercise/add', function(req, res, next){
   const exercise = new Exercise({ ...req.body });
   exercise.save(function(err, exercise){
     if(err) return next(err);
+    exercise = exercise.toArray();
     res.json(exercise);
   });
 });
