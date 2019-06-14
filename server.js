@@ -4,6 +4,7 @@ const bodyParser = require('body-parser')
 
 const cors = require('cors')
 
+const shortid = require('shortid')
 const mongoose = require('mongoose')
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/exercise-track' )
 
@@ -18,10 +19,67 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
-require('./user');
-require('./exercise');
+const userSchema = mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  _id: {
+    'type': String,
+    'default': shortid.generate
+  }
+});
+const User = mongoose.model('User', userSchema);
 
-app.use('/api/exercise', require('./api'));
+const exerciseSchema = mongoose.Schema({
+  userId: {
+    type: String,
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  duration: {
+    type: Number,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  _id: {
+    'type': String,
+    'default': shortid.generate
+  }
+});
+
+const Exercise = mongoose.model('Exercise', exerciseSchema);
+
+const router = require('express').Router();
+const User = require('./user');
+const Exercise = require('./exercise');
+
+router.get('/log', function(req, res){
+  
+});
+
+router.post('/new-user', function(req, res){
+  
+  const username = req.body.username;
+  const user = new User({
+    username
+  });
+  user.save(function(err, user){
+    res.json({ username: user.username, _id: user._id });
+  });
+  
+});
+
+app.post('/api/exercise/add', function(req, res){
+  
+});
 
 // Not found middleware
 app.use((req, res, next) => {
