@@ -60,7 +60,41 @@ const Exercise = mongoose.model('Exercise', exerciseSchema);
 
 app.get('/api/exercise/log', function(req, res, next){
   const userId = req.query.userId;
-  if(!userId) return next(new Error('unknown userId');
+  if(!userId) return next(new Error('unknown userId'));
+  User.findOne({_id: userId}, function(err, user){
+    if(err) return next(err);
+    req.user = user;
+    next();
+  });
+}, function(req, res, next){
+  const { from, to, limit } = req.query;
+  const query = Exercise.where({userId: req.user.id});
+  const result = {};
+  if(from) {
+    query.where({ date: { $gte: from } });
+    result.from = from;
+  }
+  if(to) {
+    query.where({ date: { $lte: to } });
+    result.to = to;
+  }
+  
+  if(limit) query.limit(limit);
+  
+  query.exec(function(err, data){
+    if(err) return next(err);
+    
+    result = {
+      ...req.user,
+      count: data.length,
+      log: data,
+      ...result
+    };
+    
+    res.json(result);
+    
+  });
+  
 });
 app.post('/api/exercise/new-user', function(req, res, next){
   const username = req.body.username;
