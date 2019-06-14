@@ -68,31 +68,35 @@ app.get('/api/exercise/log', function(req, res, next){
 }, function(req, res, next){
   const { from, to, limit } = req.query;
   const query = Exercise.where({userId: req.user.id});
-  const result = {};
-  if(from) {
+  let result = {};
+  if(from && moment(from).isValid()) {
     query.where({ date: { $gte: from } });
     result.from = moment(from).format("ddd MMM DD YYYY");
   }
-  if(to) {
+  if(to && moment(from).isValid()) {
     query.where({ date: { $lte: to } });
     result.to = moment(to).format("ddd MMM DD YYYY");
   }
-  if(limit) query.limit(limit);
+  if(limit) {
+    query.limit(Number(limit));
+  }
   
-  query.exec(function(err, data){
+  query.select({ _id: 0, userId: 0 }).exec(function(err, data){
     if(err) return next(err);
-    data = data.map(function(item) { 
+    let list = data.map(function(item) { 
       let tmp = item.toObject();
       tmp.date = moment(tmp.date).format("ddd MMM DD YYYY");
       return tmp;
     });
     
     result = {
-      ...req.user,
-      count: data.length,
-      log: data,
-      ...result
+      _id: req.user.id,
+      username: req.user.username,
+      ...result,
+      count: list.length,
+      log: list
     };
+    
     res.json(result);
   });
 });
@@ -102,7 +106,10 @@ app.post('/api/exercise/new-user', function(req, res, next){
     username
   });
   user.save(function(err, user){
-    if(err) return next(err);
+    if(err) {
+      console.log(err.name);
+      return next(err);
+    }
     res.json(user);
   });
 });
