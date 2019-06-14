@@ -107,7 +107,8 @@ app.post('/api/exercise/new-user', function(req, res, next){
   });
   user.save(function(err, user){
     if(err) {
-      console.log(err.name);
+      if(err.code === 11000)
+        return next(new Error("username already taken"));
       return next(err);
     }
     res.json(user);
