@@ -6,7 +6,7 @@ const cors = require('cors')
 
 const shortid = require('shortid')
 const mongoose = require('mongoose')
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/exercise-track' )
 const userSchema = mongoose.Schema({
     username: {
       type: String,
@@ -52,6 +52,14 @@ app.use(bodyParser.json())
 
 app.use(express.static('public'))
 
+app.get('/is-mongoose-ok', function(req, res) {
+  if (mongoose) {
+    res.json({isMongooseOk: !!mongoose.connection.readyState})
+  } else {
+    res.json({isMongooseOk: false})
+  }
+});
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
@@ -90,6 +98,9 @@ app.get('/api/exercise/log', function(req, res, next){
   });
 });
 app.post('/api/exercise/new-user', function(req, res, next){
+  
+  
+  
   const username = req.body.username;
   const user = new User({
     username
