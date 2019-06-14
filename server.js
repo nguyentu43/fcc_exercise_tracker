@@ -57,26 +57,20 @@ const exerciseSchema = mongoose.Schema({
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
-const router = require('express').Router();
-const User = require('./user');
-const Exercise = require('./exercise');
-
-router.get('/log', function(req, res){
+app.get('/api/exercise/log', function(req, res){
   
 });
-
-router.post('/new-user', function(req, res){
-  
+app.post('/api/exercise/new-user', function(req, res, next){
   const username = req.body.username;
   const user = new User({
     username
   });
   user.save(function(err, user){
+    if(err) return next(err);
     res.json({ username: user.username, _id: user._id });
   });
   
 });
-
 app.post('/api/exercise/add', function(req, res){
   
 });
