@@ -26,8 +26,8 @@ const userSchema = mongoose.Schema({
     unique: true
   },
   _id: {
-    'type': String,
-    'default': shortid.generate
+    type: String,
+    default: shortid.generate
   }
 });
 const User = mongoose.model('User', userSchema);
@@ -35,6 +35,7 @@ const User = mongoose.model('User', userSchema);
 const exerciseSchema = mongoose.Schema({
   userId: {
     type: String,
+    ref: 'User',
     required: true
   },
   description: {
@@ -47,7 +48,7 @@ const exerciseSchema = mongoose.Schema({
   },
   date: {
     type: Date,
-    required: true
+    default: new Date
   },
   _id: {
     'type': String,
@@ -57,8 +58,9 @@ const exerciseSchema = mongoose.Schema({
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);
 
-app.get('/api/exercise/log', function(req, res){
-  
+app.get('/api/exercise/log', function(req, res, next){
+  const userId = req.query.userId;
+  if(!userId) return next(new Error('unknown userId');
 });
 app.post('/api/exercise/new-user', function(req, res, next){
   const username = req.body.username;
@@ -67,12 +69,15 @@ app.post('/api/exercise/new-user', function(req, res, next){
   });
   user.save(function(err, user){
     if(err) return next(err);
-    res.json({ username: user.username, _id: user._id });
+    res.json(user);
   });
-  
 });
-app.post('/api/exercise/add', function(req, res){
-  
+app.post('/api/exercise/add', function(req, res, next){
+  const exercise = new Exercise({ ...req.body });
+  exercise.save(function(err, exercise){
+    if(err) return next(err);
+    res.json(exercise);
+  });
 });
 
 // Not found middleware
