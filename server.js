@@ -6,7 +6,7 @@ const cors = require('cors')
 
 const shortid = require('shortid')
 const mongoose = require('mongoose')
-mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/exercise-track' )
+const cn = mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost/exercise-track' )
 
 app.use(cors())
 
@@ -15,50 +15,57 @@ app.use(bodyParser.json())
 
 
 app.use(express.static('public'))
+
+app.use(function(req, res, next){
+  
+  cn.then(function(){
+    const userSchema = mongoose.Schema({
+      username: {
+        type: String,
+        required: true,
+        unique: true
+      },
+      _id: {
+        type: String,
+        default: shortid.generate
+      }
+    });
+    mongoose.model('User', userSchema);
+
+    const exerciseSchema = mongoose.Schema({
+      userId: {
+        type: String,
+        ref: 'User',
+        required: true
+      },
+      description: {
+        type: String,
+        required: true
+      },
+      duration: {
+        type: Number,
+        required: true
+      },
+      date: {
+        type: Date,
+        default: new Date
+      },
+      _id: {
+        'type': String,
+        'default': shortid.generate
+      }
+    });
+    mongoose.model('Exercise', exerciseSchema);
+    next();
+  });
+});
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
-const userSchema = mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  _id: {
-    type: String,
-    default: shortid.generate
-  }
-});
-const User = mongoose.model('User', userSchema);
-
-const exerciseSchema = mongoose.Schema({
-  userId: {
-    type: String,
-    ref: 'User',
-    required: true
-  },
-  description: {
-    type: String,
-    required: true
-  },
-  duration: {
-    type: Number,
-    required: true
-  },
-  date: {
-    type: Date,
-    default: new Date
-  },
-  _id: {
-    'type': String,
-    'default': shortid.generate
-  }
-});
-
-const Exercise = mongoose.model('Exercise', exerciseSchema);
-
 app.get('/api/exercise/log', function(req, res, next){
+  const User = mongoose.model('User');
   const userId = req.query.userId;
   if(!userId) return next(new Error('unknown userId'));
   User.findOne({_id: userId}, function(err, user){
@@ -67,6 +74,7 @@ app.get('/api/exercise/log', function(req, res, next){
     next();
   });
 }, function(req, res, next){
+  const Exercise = mongoose.model('Exercise');
   const { from, to, limit } = req.query;
   const query = Exercise.where({userId: req.user.id});
   const result = {};
@@ -97,6 +105,7 @@ app.get('/api/exercise/log', function(req, res, next){
   
 });
 app.post('/api/exercise/new-user', function(req, res, next){
+  const User = mongoose.model('User');
   const username = req.body.username;
   const user = new User({
     username
@@ -107,6 +116,7 @@ app.post('/api/exercise/new-user', function(req, res, next){
   });
 });
 app.post('/api/exercise/add', function(req, res, next){
+  const Exercise = mongoose.model('Exercise');
   const exercise = new Exercise({ ...req.body });
   exercise.save(function(err, exercise){
     if(err) return next(err);
